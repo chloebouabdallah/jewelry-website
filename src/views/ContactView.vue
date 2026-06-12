@@ -118,12 +118,10 @@
 </template>
 
 <script setup>
-
+import { ref } from 'vue'
 import { useScrollAnimation } from '@/composables/useScrollAnimation'
 
 useScrollAnimation()
-
-import { ref } from 'vue'
 
 const form = ref({
   name: '',
@@ -137,9 +135,26 @@ const messageClass = ref('')
 
 const handleSubmit = () => {
   if (form.value.name && form.value.email && form.value.message) {
+    // Prepare the email content
+    const subject = encodeURIComponent(form.value.subject || 'New Contact Form Message from SOUTOU')
+    const body = encodeURIComponent(
+      `Name: ${form.value.name}\n` +
+      `Email: ${form.value.email}\n\n` +
+      `Subject: ${form.value.subject || 'No subject'}\n\n` +
+      `Message:\n${form.value.message}\n\n` +
+      `---\nThis message was sent from the SOUTOU contact form.`
+    )
+    
+    // Open user's default email client
+    window.location.href = `mailto:hello@soutou.com?subject=${subject}&body=${body}`
+    
+    // Show success message
     messageClass.value = 'text-green-600'
-    message.value = `✨ Thank you ${form.value.name}! We'll reply within 24 hours. ✨`
+    message.value = `✨ Thank you ${form.value.name}! Your email client will open to send your message. ✨`
+    
+    // Reset form
     form.value = { name: '', email: '', subject: '', message: '' }
+    
     setTimeout(() => {
       message.value = ''
     }, 5000)
@@ -163,4 +178,3 @@ const handleSubmit = () => {
   opacity: 0;
 }
 </style>
-

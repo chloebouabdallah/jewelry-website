@@ -2,8 +2,8 @@
   <main class="pt-32 pb-20 px-5">
     <div class="max-w-7xl mx-auto">
       
-      <!-- Breadcrumb -->
-      <div class="mb-6 md:mb-8">
+      <!-- Breadcrumb with fade-in -->
+      <div class="mb-6 md:mb-8 fade-on-scroll fade-up">
         <div class="flex items-center gap-2 text-xs md:text-sm text-stone-500 flex-wrap">
           <router-link to="/" class="hover:text-amber-600 transition">Home</router-link>
           <i class="fas fa-chevron-right text-[10px] md:text-xs"></i>
@@ -14,7 +14,7 @@
       </div>
       
       <!-- Product Not Found -->
-      <div v-if="!product" class="text-center py-20">
+      <div v-if="!product" class="text-center py-20 fade-on-scroll fade-up">
         <i class="fas fa-search text-6xl text-amber-300 mb-4"></i>
         <h2 class="text-2xl font-playfair text-stone-800 mb-2">Product Not Found</h2>
         <p class="text-stone-600 mb-6">The product you're looking for doesn't exist or has been removed.</p>
@@ -26,8 +26,8 @@
       <!-- Product Detail -->
       <div v-else class="flex flex-col lg:flex-row gap-8 md:gap-12">
         
-        <!-- LEFT: Image Gallery -->
-        <div class="lg:w-1/2">
+        <!-- LEFT: Image Gallery with fade-left -->
+        <div class="lg:w-1/2 fade-on-scroll fade-left">
           <div class="sticky top-28 md:top-32">
             <div class="relative rounded-2xl md:rounded-3xl overflow-hidden bg-gradient-to-br from-amber-100 to-amber-50 shadow-2xl group">
               <img :src="currentImage" :alt="product.name" class="w-full h-auto object-cover transition-all duration-700 group-hover:scale-105">
@@ -50,8 +50,8 @@
           </div>
         </div>
         
-        <!-- RIGHT: Product Info -->
-        <div class="lg:w-1/2">
+        <!-- RIGHT: Product Info with fade-right -->
+        <div class="lg:w-1/2 fade-on-scroll fade-right">
           <div class="flex flex-wrap gap-1.5 md:gap-2 mb-3 md:mb-4">
             <span v-for="tag in (product.tags || [])" :key="tag" class="bg-amber-100 text-amber-800 px-2 md:px-3 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs font-semibold">
               {{ tag }}
@@ -138,8 +138,8 @@
         </div>
       </div>
       
-      <!-- Related Products -->
-      <section v-if="relatedProducts.length > 0" class="mt-12 md:mt-20">
+      <!-- Related Products with fade-up -->
+      <section v-if="relatedProducts.length > 0" class="mt-12 md:mt-20 fade-on-scroll fade-up">
         <div class="text-center mb-6 md:mb-10">
           <span class="text-amber-700 tracking-widest text-[10px] md:text-sm uppercase font-semibold">You May Also Like</span>
           <h2 class="text-xl md:text-2xl lg:text-3xl font-bold font-playfair mt-1 md:mt-2 text-stone-800">Complete Your Look</h2>
@@ -164,6 +164,15 @@
         </div>
       </section>
       
+      <!-- Review Section with fade-up -->
+      <div class="fade-on-scroll fade-up">
+        <ReviewSection 
+          :productId="product.id" 
+          :productName="product.name" 
+          :productImage="product.image" 
+        />
+      </div>
+      
     </div>
   </main>
 </template>
@@ -174,6 +183,7 @@ import { useRoute } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import { useAuthStore } from '@/stores/auth'
 import { useScrollAnimation } from '@/composables/useScrollAnimation'
+import ReviewSection from '@/components/ReviewSection.vue'
 
 const route = useRoute()
 const cartStore = useCartStore()
@@ -387,7 +397,10 @@ const productsDatabase = {
   }
 }
 
-const product = computed(() => productsDatabase[parseInt(route.params.id)] || null)
+const product = computed(() => {
+  const id = parseInt(route.params.id)
+  return productsDatabase[id] || null
+})
 
 const categoryTitle = computed(() => {
   const titles = { necklaces: 'Necklaces', earrings: 'Earrings', rings: 'Rings', bracelets: 'Bracelets' }
