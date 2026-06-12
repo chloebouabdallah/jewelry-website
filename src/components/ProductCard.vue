@@ -41,6 +41,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useCartStore } from '@/stores/cart'
+import { useAuthStore } from '@/stores/auth'
 
 const props = defineProps({
   product: {
@@ -50,19 +51,27 @@ const props = defineProps({
 })
 
 const cartStore = useCartStore()
+const authStore = useAuthStore()
 const isFavorited = ref(false)
 
 const toggleFavorite = () => {
   isFavorited.value = !isFavorited.value
 }
 
-const handleAddToCart = (e) => {
-  e.preventDefault()
-  cartStore.addToCart({
-    id: props.product.id,
-    name: props.product.name,
-    price: props.product.price,
-    image: props.product.image
-  })
+const handleAddToCart = () => {
+  // Use the auth store directly to check authentication
+  const isAuthenticated = authStore.isAuthenticated
+  
+  cartStore.addToCart(
+    {
+      id: props.product.id,
+      name: props.product.name,
+      price: props.product.price,
+      image: props.product.image,
+      quantity: 1
+    },
+    isAuthenticated,
+    authStore.openAuthModal
+  )
 }
 </script>

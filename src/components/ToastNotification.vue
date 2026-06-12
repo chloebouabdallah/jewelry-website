@@ -1,29 +1,23 @@
 <template>
+  <!-- Success Toast -->
   <Transition name="toast">
-    <div v-if="message" class="fixed bottom-5 right-5 bg-[#2c2418] text-white px-5 py-3 rounded-full text-sm z-[1000] shadow-lg">
-      {{ message }}
+    <div v-if="cartStore.lastAddedMessage" class="fixed bottom-5 right-5 bg-green-600 text-white px-5 py-3 rounded-full text-sm z-[1000] shadow-lg">
+      <i class="fas fa-check-circle mr-2"></i> {{ cartStore.lastAddedMessage }}
+    </div>
+  </Transition>
+  
+  <!-- Auth Required Toast -->
+  <Transition name="toast">
+    <div v-if="cartStore.authRequiredMessage" class="fixed bottom-5 right-5 bg-amber-600 text-white px-5 py-3 rounded-full text-sm z-[1000] shadow-lg">
+      <i class="fas fa-exclamation-triangle mr-2"></i> {{ cartStore.authRequiredMessage }}
     </div>
   </Transition>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
 import { useCartStore } from '@/stores/cart'
 
 const cartStore = useCartStore()
-const message = ref('')
-let timeoutId = null
-
-// Watch for cart changes and show message
-watch(() => cartStore.lastAddedMessage, (newMessage) => {
-  if (newMessage) {
-    if (timeoutId) clearTimeout(timeoutId)
-    message.value = newMessage
-    timeoutId = setTimeout(() => {
-      message.value = ''
-    }, 2000)
-  }
-})
 </script>
 
 <style scoped>

@@ -33,7 +33,7 @@
                   <span class="text-amber-700 font-bold text-xs sm:text-sm">${{ product.price }}</span>
                   <span v-if="product.oldPrice" class="text-stone-400 text-[8px] sm:text-xs line-through">${{ product.oldPrice }}</span>
                 </div>
-                <button class="mt-2 w-full py-1 rounded-full border border-amber-300 text-amber-700 text-[10px] sm:text-xs font-semibold hover:bg-amber-600 hover:text-white transition">
+                <button @click.prevent="quickAddToCart(product)" class="mt-2 w-full py-1 rounded-full border border-amber-300 text-amber-700 text-[10px] sm:text-xs font-semibold hover:bg-amber-600 hover:text-white transition">
                   Quick Shop
                 </button>
               </div>
@@ -69,7 +69,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { useCartStore } from '@/stores/cart'
+import { useAuthStore } from '@/stores/auth'
+
+const cartStore = useCartStore()
+const authStore = useAuthStore()
 
 const products = [
   { id: 1, img: "/necklace2.webp", name: "Celestial Diamond Necklace", type: "Necklace", price: "3850", oldPrice: "4800", badge: "Best Seller" },
@@ -86,22 +91,28 @@ const currentIndex = ref(products.length)
 const currentTranslateX = ref(0)
 let autoRotateInterval = null
 let cardWidth = 220
+let isComponentMounted = true
 
 const activeDotIndex = computed(() => currentIndex.value % products.length)
 
 const updateTranslateX = () => {
+  if (!isComponentMounted) return
   const gap = 16
   const cardWidthActual = document.querySelector('.group')?.offsetWidth || 220
   cardWidth = cardWidthActual
-  currentTranslateX.value = currentIndex.value * (cardWidth + gap)
+  if (trackRef.value) {
+    currentTranslateX.value = currentIndex.value * (cardWidth + gap)
+  }
 }
 
 const slideNext = () => {
+  if (!trackRef.value) return
   const gap = 16
   currentIndex.value++
   currentTranslateX.value = currentIndex.value * (cardWidth + gap)
   
   setTimeout(() => {
+    if (!isComponentMounted) return
     if (currentIndex.value >= products.length * 2) {
       if (trackRef.value) trackRef.value.style.transition = 'none'
       const resetIndex = currentIndex.value - products.length
@@ -116,11 +127,13 @@ const slideNext = () => {
 }
 
 const slidePrev = () => {
+  if (!trackRef.value) return
   const gap = 16
   currentIndex.value--
   currentTranslateX.value = currentIndex.value * (cardWidth + gap)
   
   setTimeout(() => {
+    if (!isComponentMounted) return
     if (currentIndex.value < products.length) {
       if (trackRef.value) trackRef.value.style.transition = 'none'
       const resetIndex = currentIndex.value + products.length
@@ -135,31 +148,62 @@ const slidePrev = () => {
 }
 
 const goToSlide = (index) => {
+  if (!trackRef.value) return
   const gap = 16
   const targetIndex = ((currentIndex.value - (currentIndex.value % products.length)) + index)
   currentIndex.value = targetIndex
   currentTranslateX.value = currentIndex.value * (cardWidth + gap)
 }
 
+const quickAddToCart = (product) => {
+  cartStore.addToCart(
+    {
+      id: product.id,
+      name: product.name,
+      price: parseInt(product.price),
+      image: product.img,
+      quantity: 1
+    },
+    authStore.isAuthenticated,
+    authStore.openAuthModal
+  )
+}
+
 const startAutoRotate = () => {
-  autoRotateInterval = setInterval(slideNext, 4000)
+  if (autoRotateInterval) clearInterval(autoRotateInterval)
+  autoRotateInterval = setInterval(() => {
+    if (isComponentMounted) {
+      slideNext()
+    }
+  }, 4000)
 }
 
 const stopAutoRotate = () => {
-  if (autoRotateInterval) clearInterval(autoRotateInterval)
+  if (autoRotateInterval) {
+    clearInterval(autoRotateInterval)
+    autoRotateInterval = null
+  }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  isComponentMounted = true
+  await nextTick()
   setTimeout(() => {
-    updateTranslateX()
+    if (isComponentMounted) {
+      updateTranslateX()
+      startAutoRotate()
+    }
   }, 100)
-  startAutoRotate()
+  
   window.addEventListener('resize', () => {
-    updateTranslateX()
+    if (isComponentMounted) {
+      updateTranslateX()
+    }
   })
 })
 
 onUnmounted(() => {
+  isComponentMounted = false
   stopAutoRotate()
   window.removeEventListener('resize', updateTranslateX)
 })

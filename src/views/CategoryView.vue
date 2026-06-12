@@ -107,9 +107,9 @@
                 </div>
                 <div class="p-2 md:p-3">
                   <h3 class="font-playfair text-xs sm:text-sm md:text-base font-semibold text-stone-800 leading-tight">{{ product.name }}</h3>
-                  <p class="text-stone-500 text-[9px] sm:text-xs mt-0.5">{{ product.metal }} · {{ product.gemstone }}</p>
+                  <p class="text-stone-500 text-[9px] sm:text-xs mt-0.5">{{ product.metal || 'N/A' }} · {{ product.gemstone || 'N/A' }}</p>
                   <div class="flex justify-between items-center mt-1.5 md:mt-2">
-                    <span class="text-amber-700 font-bold text-xs sm:text-sm md:text-base">${{ product.price.toLocaleString() }}</span>
+                    <span class="text-amber-700 font-bold text-xs sm:text-sm md:text-base">${{ (product.price || 0).toLocaleString() }}</span>
                     <div class="flex gap-1">
                       <button @click.prevent="toggleFavorite(product.id)" class="w-5 h-5 md:w-7 md:h-7 rounded-full bg-amber-100 transition flex items-center justify-center" :class="favorites[product.id] ? 'text-pink-600 bg-pink-100' : 'text-amber-600 hover:bg-pink-100 hover:text-pink-600'">
                         <i :class="favorites[product.id] ? 'fas fa-heart' : 'far fa-heart'" class="text-[9px] md:text-xs"></i>
@@ -139,10 +139,12 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
+import { useAuthStore } from '@/stores/auth'
 import { useScrollAnimation } from '@/composables/useScrollAnimation'
 
 const route = useRoute()
 const cartStore = useCartStore()
+const authStore = useAuthStore()
 
 // Initialize scroll animations
 useScrollAnimation()
@@ -303,12 +305,17 @@ const toggleFavorite = (productId) => {
 }
 
 const addToCart = (product) => {
-  cartStore.addToCart({
-    id: product.id,
-    name: product.name,
-    price: product.price,
-    image: product.image
-  })
+  cartStore.addToCart(
+    {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      quantity: 1
+    },
+    authStore.isAuthenticated,
+    authStore.openAuthModal
+  )
 }
 
 const handleImageError = (event) => {
