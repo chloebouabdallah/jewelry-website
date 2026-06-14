@@ -4,7 +4,7 @@
       <!-- Logo -->
       <router-link to="/" class="flex items-center gap-2">
         <i class="fas fa-gem text-lg md:text-xl text-[#b8926c]"></i>
-        <span class="text-base md:text-xl font-semibold tracking-wide font-playfair text-[#2c2418]">SOUTOU</span>
+        <span class="text-base md:text-xl font-semibold tracking-wide font-playfair text-[#2c2418]">Chloe</span>
       </router-link>
       
       <!-- Desktop Navigation -->
