@@ -232,15 +232,6 @@
                   </p>
                 </div>
               </div>
-
-              <!-- Submit Button -->
-              <button
-                v-if="hasCustomizations"
-                @click="submitCustomization"
-                class="w-full mt-4 bg-gradient-to-r from-amber-600 to-amber-500 text-white py-3 rounded-full font-semibold hover:scale-[1.02] transition shadow-md"
-              >
-                Get a Quote
-              </button>
             </div>
           </div>
 
@@ -342,16 +333,113 @@
                 craftsmanship.
               </p>
 
+              <!-- ========== PRICE SECTION ========== -->
+              <div
+                v-if="hasCustomizations"
+                class="mt-6 pt-4 border-t-2 border-amber-200"
+              >
+                <div class="flex justify-between items-center mb-2">
+                  <span class="text-stone-600 text-sm font-medium"
+                    >Base Price</span
+                  >
+                  <span class="text-stone-800 font-semibold"
+                    >${{ basePrice.toLocaleString() }}</span
+                  >
+                </div>
+
+                <!-- Metal upgrade -->
+                <div
+                  v-if="selectedMetal !== 'all' && selectedMetal !== 'yellow-gold'"
+                  class="flex justify-between items-center text-sm text-stone-600"
+                >
+                  <span>Metal Upgrade ({{ getMetalLabel }})</span>
+                  <span class="text-amber-700 font-medium"
+                    >+${{ getMetalUpgradePrice.toLocaleString() }}</span
+                  >
+                </div>
+
+                <!-- Setting upgrade -->
+                <div
+                  v-if="selectedSetting !== 'all' && selectedSetting !== 'solitaire'"
+                  class="flex justify-between items-center text-sm text-stone-600"
+                >
+                  <span>Setting ({{ getSettingLabel }})</span>
+                  <span class="text-amber-700 font-medium"
+                    >+${{ getSettingUpgradePrice.toLocaleString() }}</span
+                  >
+                </div>
+
+                <!-- Carat upgrade -->
+                <div
+                  v-if="selectedCarat !== 'all' && selectedCarat !== 1.0"
+                  class="flex justify-between items-center text-sm text-stone-600"
+                >
+                  <span>Carat Upgrade ({{ selectedCarat }}ct)</span>
+                  <span class="text-amber-700 font-medium"
+                    >+${{ getCaratUpgradePrice.toLocaleString() }}</span
+                  >
+                </div>
+
+                <!-- Band upgrade -->
+                <div
+                  v-if="selectedBand !== 'all' && selectedBand !== 'plain'"
+                  class="flex justify-between items-center text-sm text-stone-600"
+                >
+                  <span>Band ({{ getBandLabel }})</span>
+                  <span class="text-amber-700 font-medium"
+                    >+${{ getBandUpgradePrice.toLocaleString() }}</span
+                  >
+                </div>
+
+                <!-- Accent upgrade -->
+                <div
+                  v-if="selectedAccent !== 'all' && selectedAccent !== 'none'"
+                  class="flex justify-between items-center text-sm text-stone-600"
+                >
+                  <span>Accents ({{ getAccentLabel }})</span>
+                  <span class="text-amber-700 font-medium"
+                    >+${{ getAccentUpgradePrice.toLocaleString() }}</span
+                  >
+                </div>
+
+                <div
+                  class="flex justify-between items-center pt-3 mt-3 border-t-2 border-amber-100"
+                >
+                  <span class="text-stone-800 font-bold text-lg"
+                    >Estimated Total</span
+                  >
+                  <span class="text-amber-700 font-bold text-2xl"
+                    >${{ totalPrice.toLocaleString() }}</span
+                  >
+                </div>
+                <p class="text-stone-400 text-xs mt-2 text-center">
+                  *Final price may vary based on exact specifications and
+                  material availability
+                </p>
+              </div>
+
+              <!-- ========== ACTION BUTTONS ========== -->
               <div class="flex flex-wrap gap-3 mt-4">
+                <!-- Add to Cart Button -->
+                <button
+                  @click="addToCart"
+                  class="flex-1 bg-gradient-to-r from-amber-600 to-amber-500 text-white py-3 rounded-full font-semibold hover:scale-[1.02] transition shadow-md text-sm md:text-base flex items-center justify-center gap-2"
+                >
+                  <i class="fas fa-shopping-bag"></i>
+                  Add to Cart - ${{ totalPrice.toLocaleString() }}
+                </button>
+
+                <!-- Submit Customization Request (for quote) -->
                 <button
                   @click="submitCustomization"
-                  class="flex-1 bg-gradient-to-r from-amber-600 to-amber-500 text-white py-3 rounded-full font-semibold hover:scale-[1.02] transition shadow-md text-sm md:text-base"
+                  class="border-2 border-amber-600 text-amber-700 px-4 py-3 rounded-full font-semibold hover:bg-amber-600 hover:text-white transition text-sm md:text-base"
                 >
-                  Submit Customization Request
+                  <i class="fas fa-paper-plane mr-1"></i> Get Quote
                 </button>
+
                 <button
                   @click="resetCustomization"
-                  class="px-6 border-2 border-stone-300 text-stone-600 py-3 rounded-full font-semibold hover:border-amber-600 hover:text-amber-600 transition text-sm md:text-base"
+                  class="px-4 border-2 border-stone-300 text-stone-600 py-3 rounded-full font-semibold hover:border-amber-600 hover:text-amber-600 transition text-sm md:text-base"
                 >
                   Start Over
                 </button>
@@ -367,6 +455,7 @@
                 <i class="fas fa-pen-fancy text-4xl text-amber-300 mb-3"></i>
                 <p class="text-stone-500 text-sm">
                   Select options on the left to see your customization summary
+                  and price
                 </p>
               </div>
             </div>
@@ -443,11 +532,13 @@
 import { ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { useCartStore } from '@/stores/cart';
 import { useScrollAnimation } from '@/composables/useScrollAnimation';
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const cartStore = useCartStore();
 useScrollAnimation();
 
 // Get category from URL query parameter
@@ -477,6 +568,56 @@ const categoryDescription = computed(() => {
     'Design your perfect piece with our customization tool'
   );
 });
+
+// ========== PRICE CONFIGURATION ==========
+const BASE_PRICES = {
+  rings: 1200,
+  necklaces: 1500,
+  earrings: 800,
+  bracelets: 600,
+};
+
+// Metal prices (additional cost)
+const METAL_PRICES = {
+  'yellow-gold': 0,
+  'white-gold': 200,
+  'rose-gold': 250,
+  platinum: 800,
+};
+
+// Setting prices (additional cost)
+const SETTING_PRICES = {
+  solitaire: 0,
+  halo: 300,
+  trilogy: 450,
+  pave: 350,
+};
+
+// Carat prices (additional cost)
+const CARAT_PRICES = {
+  1.0: 0,
+  1.5: 400,
+  2.0: 900,
+  2.5: 1500,
+  3.0: 2200,
+  4.0: 3500,
+};
+
+// Band prices (additional cost)
+const BAND_PRICES = {
+  plain: 0,
+  diamond: 350,
+  twisted: 200,
+  eternity: 500,
+};
+
+// Accent prices (additional cost)
+const ACCENT_PRICES = {
+  none: 0,
+  pave: 250,
+  'micro-pave': 400,
+  channel: 300,
+};
 
 // Selection state
 const selectedMetal = ref('all');
@@ -531,6 +672,49 @@ const accents = [
   { value: 'channel', label: 'Channel' },
 ];
 
+// ========== PRICE COMPUTATIONS ==========
+const basePrice = computed(() => {
+  return BASE_PRICES[category.value] || 1000;
+});
+
+const getMetalUpgradePrice = computed(() => {
+  if (selectedMetal.value === 'all' || selectedMetal.value === 'yellow-gold')
+    return 0;
+  return METAL_PRICES[selectedMetal.value] || 0;
+});
+
+const getSettingUpgradePrice = computed(() => {
+  if (selectedSetting.value === 'all' || selectedSetting.value === 'solitaire')
+    return 0;
+  return SETTING_PRICES[selectedSetting.value] || 0;
+});
+
+const getCaratUpgradePrice = computed(() => {
+  if (selectedCarat.value === 'all' || selectedCarat.value === 1.0) return 0;
+  return CARAT_PRICES[selectedCarat.value] || 0;
+});
+
+const getBandUpgradePrice = computed(() => {
+  if (selectedBand.value === 'all' || selectedBand.value === 'plain') return 0;
+  return BAND_PRICES[selectedBand.value] || 0;
+});
+
+const getAccentUpgradePrice = computed(() => {
+  if (selectedAccent.value === 'all' || selectedAccent.value === 'none')
+    return 0;
+  return ACCENT_PRICES[selectedAccent.value] || 0;
+});
+
+const totalPrice = computed(() => {
+  let total = basePrice.value;
+  total += getMetalUpgradePrice.value;
+  total += getSettingUpgradePrice.value;
+  total += getCaratUpgradePrice.value;
+  total += getBandUpgradePrice.value;
+  total += getAccentUpgradePrice.value;
+  return total;
+});
+
 // Helper getters
 const getMetalLabel = computed(() => {
   const found = metals.find((m) => m.value === selectedMetal.value);
@@ -569,7 +753,23 @@ const hasCustomizations = computed(() => {
   );
 });
 
-// ALL items based on category (not just 4)
+// Build full customization details string for cart
+const getCustomizationDescription = () => {
+  let parts = [];
+  if (selectedMetal.value !== 'all') parts.push(getMetalLabel.value);
+  if (selectedSetting.value !== 'all') parts.push(`${getSettingLabel.value} setting`);
+  if (selectedShape.value !== 'all') parts.push(`${getShapeLabel.value} cut`);
+  if (selectedCarat.value !== 'all') parts.push(`${selectedCarat.value}ct diamond`);
+  if (selectedBand.value !== 'all') parts.push(`${getBandLabel.value} band`);
+  if (selectedAccent.value !== 'all' && selectedAccent.value !== 'none') {
+    parts.push(`${getAccentLabel.value} accents`);
+  } else if (selectedAccent.value === 'none') {
+    parts.push('no accents');
+  }
+  return parts.join(', ');
+};
+
+// ALL items based on category
 const allCategoryItems = computed(() => {
   const allProducts = {
     rings: [
@@ -752,12 +952,76 @@ const allCategoryItems = computed(() => {
   return allProducts[category.value] || allProducts.rings;
 });
 
-// Methods
+// ========== METHODS ==========
+
 const goToProduct = (productId) => {
   router.push(`/product/${productId}`);
 };
 
+// ========== ADD TO CART ==========
+const addToCart = () => {
+  if (!hasCustomizations.value) {
+    alert('Please select at least one customization option first!');
+    return;
+  }
+
+  // Build the full customization description
+  const customizationDescription = getCustomizationDescription();
+
+  // Create custom item for cart (NO IMAGE, NO QUANTITY)
+  const customItem = {
+    id: `custom-${category.value}-${Date.now()}`,
+    name: `Custom ${categoryDisplay.value}`,
+    price: totalPrice.value,
+    image: '', // No image
+    quantity: 1,
+    isCustom: true,
+    // Full description with all details - displayed in cart
+    description: `✨ Custom ${categoryDisplay.value}: ${customizationDescription}`,
+    // Store individual details for reference
+    customizationDetails: {
+      metal: getMetalLabel.value || 'Not specified',
+      setting: getSettingLabel.value || 'Not specified',
+      shape: getShapeLabel.value || 'Not specified',
+      carat: selectedCarat.value !== 'all' ? `${selectedCarat.value}ct` : 'Not specified',
+      band: getBandLabel.value || 'Not specified',
+      accent: getAccentLabel.value || 'Not specified',
+    },
+    metal: getMetalLabel.value,
+    setting: getSettingLabel.value,
+    shape: getShapeLabel.value,
+    carat: selectedCarat.value !== 'all' ? `${selectedCarat.value}ct` : 'Not specified',
+    band: getBandLabel.value,
+    accent: getAccentLabel.value,
+    category: categoryDisplay.value,
+  };
+
+  // Add to cart store
+  cartStore.addToCart(
+    customItem,
+    authStore.isAuthenticated,
+    authStore.openAuthModal
+  );
+
+  // Show success message
+  alert(
+    `✅ Custom ${categoryDisplay.value} added to cart!\n\n` +
+      `📝 Details: ${customizationDescription}\n` +
+      `💰 Price: $${totalPrice.value.toLocaleString()}\n\n` +
+      'Go to cart to checkout or continue customizing! 💎'
+  );
+
+  // Reset customization after adding to cart
+  resetCustomization();
+};
+
+// ========== SUBMIT CUSTOMIZATION (Get Quote) ==========
 const submitCustomization = () => {
+  if (!hasCustomizations.value) {
+    alert('Please select at least one customization option first!');
+    return;
+  }
+
   const customization = {
     category: categoryDisplay.value,
     metal: getMetalLabel.value || 'Not specified',
@@ -769,6 +1033,7 @@ const submitCustomization = () => {
         : selectedCarat.value + 'ct',
     band: getBandLabel.value || 'Not specified',
     accent: getAccentLabel.value || 'Not specified',
+    estimatedPrice: totalPrice.value,
     user: authStore.currentUser?.email || 'Guest',
     date: new Date().toISOString(),
   };
@@ -778,7 +1043,7 @@ const submitCustomization = () => {
   // Save to history
   saveCustomizationToHistory(customization);
 
-  // Show success message
+  // Show success message with price
   alert(
     '✅ Your customization request has been submitted!\n\n' +
       `Category: ${customization.category}\n` +
@@ -788,10 +1053,11 @@ const submitCustomization = () => {
       `Carat: ${customization.carat}\n` +
       `Band: ${customization.band}\n` +
       `Accents: ${customization.accent}\n\n` +
-      'Our team will contact you within 24 hours with a quote! 💎',
+      `💰 Estimated Price: $${customization.estimatedPrice.toLocaleString()}\n\n` +
+      'Our team will contact you within 24 hours with a final quote! 💎',
   );
 
-  // Reset everything to empty (all selections back to 'all')
+  // Reset everything
   resetCustomization();
 };
 
