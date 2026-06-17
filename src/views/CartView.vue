@@ -8,7 +8,7 @@
         <div class="w-20 h-0.5 bg-amber-500 mx-auto rounded-full"></div>
       </div>
       
-      <!-- Login Required Message (when not logged in) -->
+      <!-- Login Required Message -->
       <div v-if="!authStore.isAuthenticated" class="bg-white rounded-2xl shadow-md p-8 text-center">
         <i class="fas fa-lock text-5xl text-amber-400 mb-4"></i>
         <h2 class="text-xl font-semibold text-stone-800 mb-2">Login to View Your Cart</h2>
@@ -23,7 +23,7 @@
         </div>
       </div>
       
-      <!-- Cart Content (only shown when logged in) -->
+      <!-- Cart Content -->
       <div v-else>
         <div class="flex flex-col lg:flex-row gap-10">
           <!-- Cart Items Section -->
@@ -38,13 +38,12 @@
               </div>
               
               <div v-else class="divide-y divide-amber-100">
-                <div v-for="item in cartStore.items" :key="item.id" class="p-5 flex gap-4 items-center">
-                  <!-- Clickable product image -->
+                <!-- Regular Items (with image and quantity controls) -->
+                <div v-for="item in regularItems" :key="item.id" class="p-5 flex gap-4 items-center">
                   <router-link :to="`/product/${item.id}`" class="block">
                     <img :src="item.image" :alt="item.name" class="w-24 h-24 object-cover rounded-xl hover:opacity-80 transition">
                   </router-link>
                   <div class="flex-1">
-                    <!-- Clickable product name -->
                     <router-link :to="`/product/${item.id}`" class="hover:text-amber-600 transition">
                       <h3 class="font-semibold text-stone-800 hover:text-amber-600">{{ item.name }}</h3>
                     </router-link>
@@ -60,6 +59,39 @@
                   </div>
                   <div class="text-right">
                     <span class="font-bold text-stone-800">${{ (item.price * item.quantity).toLocaleString() }}</span>
+                  </div>
+                </div>
+
+                <!-- Custom Items (no image, no quantity, just description) -->
+                <div v-for="item in customItems" :key="item.id" class="p-5 flex gap-4 items-start bg-amber-50/30">
+                  <!-- No image - custom icon instead -->
+                  <div class="w-24 h-24 flex-shrink-0 flex items-center justify-center bg-amber-100 rounded-xl">
+                    <i class="fas fa-pen-fancy text-3xl text-amber-600"></i>
+                  </div>
+                  <div class="flex-1">
+                    <div class="flex items-center gap-2">
+                      <h3 class="font-semibold text-stone-800">{{ item.name }}</h3>
+                      <span class="text-xs bg-amber-200 text-amber-800 px-2 py-0.5 rounded-full">Custom</span>
+                    </div>
+                    <!-- Show the full customization description -->
+                    <p class="text-sm text-stone-600 mt-1 leading-relaxed">{{ item.description }}</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                      <span v-if="item.metal && item.metal !== 'Not specified'" class="text-xs bg-amber-50 text-stone-600 px-2 py-0.5 rounded-full border border-amber-100">{{ item.metal }}</span>
+                      <span v-if="item.setting && item.setting !== 'Not specified'" class="text-xs bg-amber-50 text-stone-600 px-2 py-0.5 rounded-full border border-amber-100">{{ item.setting }} setting</span>
+                      <span v-if="item.shape && item.shape !== 'Not specified'" class="text-xs bg-amber-50 text-stone-600 px-2 py-0.5 rounded-full border border-amber-100">{{ item.shape }} cut</span>
+                      <span v-if="item.carat && item.carat !== 'Not specified'" class="text-xs bg-amber-50 text-stone-600 px-2 py-0.5 rounded-full border border-amber-100">{{ item.carat }}</span>
+                      <span v-if="item.band && item.band !== 'Not specified'" class="text-xs bg-amber-50 text-stone-600 px-2 py-0.5 rounded-full border border-amber-100">{{ item.band }} band</span>
+                      <span v-if="item.accent && item.accent !== 'Not specified' && item.accent !== 'None'" class="text-xs bg-amber-50 text-stone-600 px-2 py-0.5 rounded-full border border-amber-100">{{ item.accent }} accents</span>
+                    </div>
+                    <p class="text-amber-700 font-bold text-lg mt-2">${{ item.price.toLocaleString() }}</p>
+                    <!-- No quantity controls for custom items -->
+                    <button @click="cartStore.removeItem(item.id)" class="mt-2 text-stone-400 hover:text-red-500 transition text-sm">
+                      <i class="fas fa-trash-alt"></i> Remove
+                    </button>
+                  </div>
+                  <div class="text-right">
+                    <span class="font-bold text-stone-800">${{ item.price.toLocaleString() }}</span>
+                    <p class="text-xs text-stone-400 mt-1">Custom order</p>
                   </div>
                 </div>
               </div>
@@ -91,7 +123,6 @@
                 <span>${{ cartStore.total.toFixed(2) }}</span>
               </div>
               
-              <!-- Updated: Navigate to checkout page -->
               <router-link 
                 to="/checkout" 
                 class="block w-full mt-6 bg-gradient-to-r from-amber-600 to-amber-500 text-white py-3 rounded-full font-semibold hover:scale-[1.02] transition shadow-md text-center"
@@ -112,11 +143,21 @@
 </template>
 
 <script setup>
-import { useCartStore } from '@/stores/cart'
-import { useAuthStore } from '@/stores/auth'
-import { useScrollAnimation } from '@/composables/useScrollAnimation'
+import { computed } from 'vue';
+import { useCartStore } from '@/stores/cart';
+import { useAuthStore } from '@/stores/auth';
+import { useScrollAnimation } from '@/composables/useScrollAnimation';
 
-const cartStore = useCartStore()
-const authStore = useAuthStore()
-useScrollAnimation()
+const cartStore = useCartStore();
+const authStore = useAuthStore();
+useScrollAnimation();
+
+// Separate regular items from custom items
+const regularItems = computed(() => {
+  return cartStore.items.filter(item => !item.isCustom);
+});
+
+const customItems = computed(() => {
+  return cartStore.items.filter(item => item.isCustom);
+});
 </script>
