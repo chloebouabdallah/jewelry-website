@@ -15,6 +15,7 @@
           alt="Crop"
           class="max-w-full max-h-full"
           @load="onImageLoad"
+          style="display: block; max-width: 100%;"
         >
       </div>
       
@@ -70,24 +71,46 @@ const imageRef = ref(null)
 let cropperInstance = null
 let isCropperReady = false
 
+// When image loads, initialize cropper
 const onImageLoad = () => {
-  console.log('🖼️ Image loaded in cropper')
+  console.log('🖼️ Image loaded in cropper, initializing...')
   nextTick(() => {
     initCropper()
   })
 }
 
-// Initialize cropper when modal opens
+// Watch for modal opening
 watch(() => props.show, (newVal) => {
   console.log('🔄 CropModal show changed:', newVal)
   if (newVal) {
+    // Wait for DOM to update
     nextTick(() => {
-      if (imageRef.value && imageRef.value.complete) {
-        initCropper()
-      } else if (imageRef.value) {
-        imageRef.value.onload = () => {
+      if (imageRef.value) {
+        console.log('🖼️ Image ref exists, checking if loaded...')
+        // If image already loaded, init cropper
+        if (imageRef.value.complete && imageRef.value.naturalWidth > 0) {
           initCropper()
+        } else {
+          // Wait for image to load
+          imageRef.value.onload = () => {
+            console.log('🖼️ Image load event fired')
+            initCropper()
+          }
+          // If image fails to load, try again after a delay
+          setTimeout(() => {
+            if (!isCropperReady && imageRef.value) {
+              console.log('⏰ Image took too long, forcing init...')
+              initCropper()
+            }
+          }, 1000)
         }
+      } else {
+        console.log('❌ No image ref found, retrying...')
+        setTimeout(() => {
+          if (imageRef.value) {
+            initCropper()
+          }
+        }, 200)
       }
     })
   } else {
@@ -101,9 +124,30 @@ const initCropper = () => {
     return
   }
   
+  // Check if image is actually loaded
+  const img = imageRef.value
+  if (!img.complete || img.naturalWidth === 0) {
+    console.log('⏳ Image not fully loaded yet, waiting...')
+    img.onload = () => {
+      console.log('🖼️ Image loaded (from onload), initializing cropper')
+      initCropperNow()
+    }
+    return
+  }
+  
+  initCropperNow()
+}
+
+const initCropperNow = () => {
+  if (!imageRef.value) {
+    console.log('❌ No image ref found in initCropperNow')
+    return
+  }
+  
+  // Destroy any existing cropper
   destroyCropper()
   
-  console.log('🔄 Initializing cropper with image:', props.image.substring(0, 50) + '...')
+  console.log('🔄 Initializing cropper with image...')
   
   try {
     cropperInstance = new Cropper(imageRef.value, {
@@ -188,6 +232,14 @@ const cancelCrop = () => {
 onBeforeUnmount(() => {
   destroyCropper()
 })
+
+// Also try to initialize on mounted if show is true
+setTimeout(() => {
+  if (props.show && imageRef.value && !isCropperReady) {
+    console.log('🔄 Delayed initialization attempt...')
+    initCropper()
+  }
+}, 500)
 </script>
 
 <style scoped>

@@ -37,6 +37,7 @@
                     :src="profileImage" 
                     alt="Profile" 
                     class="w-full h-full object-cover"
+                    @error="handleImageError"
                   >
                   <i v-else class="fas fa-user text-5xl text-amber-400"></i>
                 </div>
@@ -273,11 +274,20 @@ const loadUserData = () => {
       } catch (e) {}
     }
     
-    // Load profile image
+    // Load profile image from localStorage
     const savedImage = localStorage.getItem('soutou_profile_image')
-    if (savedImage && savedImage.startsWith('data:image')) {
-      profileImage.value = savedImage
-      console.log('✅ Profile image loaded from localStorage')
+    console.log('🔍 Checking for saved image:', savedImage ? 'Found (length: ' + savedImage.length + ')' : 'Not found')
+    
+    if (savedImage) {
+      // Validate it's a proper image data URL
+      if (savedImage.startsWith('data:image')) {
+        profileImage.value = savedImage
+        console.log('✅ Profile image loaded from localStorage')
+      } else {
+        console.log('❌ Saved image is not a valid data URL, removing')
+        localStorage.removeItem('soutou_profile_image')
+        profileImage.value = null
+      }
     } else {
       profileImage.value = null
       console.log('ℹ️ No profile image found')
@@ -311,7 +321,7 @@ const handleFileSelect = (event) => {
     return
   }
   
-  console.log('📁 File selected:', file.name, file.type, file.size)
+  console.log('📁 File selected:', file.name, file.type, (file.size / 1024).toFixed(2) + 'KB')
   
   // Validate file type
   if (!file.type.startsWith('image/')) {
@@ -321,17 +331,18 @@ const handleFileSelect = (event) => {
   
   // Validate file size (max 5MB)
   if (file.size > 5 * 1024 * 1024) {
-    alert('Image size must be less than 5MB.')
+    alert('Image size must be less than 5MB. Your file is ' + (file.size / 1024 / 1024).toFixed(2) + 'MB.')
     return
   }
   
-  // Read file and show crop modal
+  // Read file
   const reader = new FileReader()
   reader.onload = (e) => {
     console.log('📸 Image loaded for cropping')
-    cropImage.value = e.target.result
+    const imageDataUrl = e.target.result
+    cropImage.value = imageDataUrl
     showCropModal.value = true
-    console.log('🔍 Crop modal should now show, showCropModal:', showCropModal.value)
+    console.log('🔍 Crop modal opened')
   }
   reader.onerror = (e) => {
     console.error('❌ Error reading file:', e)
@@ -343,24 +354,42 @@ const handleFileSelect = (event) => {
   event.target.value = ''
 }
 
+// Handle crop confirmation
 const handleCropConfirm = (croppedDataUrl) => {
   console.log('✂️ Crop confirmed, saving image...')
   showCropModal.value = false
+  
+  // Show loading state
   isUploading.value = true
   
-  setTimeout(() => {
-    try {
-      profileImage.value = croppedDataUrl
-      localStorage.setItem('soutou_profile_image', croppedDataUrl)
-      console.log('✅ Profile image saved to localStorage')
+  // Save to localStorage
+  try {
+    // Store the image data URL directly in localStorage
+    localStorage.setItem('soutou_profile_image', croppedDataUrl)
+    console.log('✅ Profile image saved to localStorage, length:', croppedDataUrl.length)
+    
+    // Update the display
+    profileImage.value = croppedDataUrl
+    
+    // Force a small delay to ensure localStorage is written
+    setTimeout(() => {
       isUploading.value = false
-      alert('✅ Profile photo updated successfully!')
-    } catch (error) {
-      console.error('❌ Error saving image:', error)
-      isUploading.value = false
-      alert('Error saving image. Please try again.')
-    }
-  }, 500)
+      // Verify it was saved
+      const verify = localStorage.getItem('soutou_profile_image')
+      if (verify) {
+        console.log('✅ Verified: Image is in localStorage')
+        alert('✅ Profile photo updated successfully!')
+      } else {
+        console.log('❌ Verification failed: Image not in localStorage')
+        alert('⚠️ Image saved but verification failed. Please try again.')
+      }
+    }, 300)
+    
+  } catch (error) {
+    console.error('❌ Error saving image to localStorage:', error)
+    isUploading.value = false
+    alert('Error saving image. Please try again. Error: ' + error.message)
+  }
 }
 
 const cancelCrop = () => {
@@ -376,6 +405,12 @@ const removeProfileImage = () => {
     console.log('🗑️ Profile image removed')
     alert('✅ Profile photo removed.')
   }
+}
+
+const handleImageError = (event) => {
+  console.log('❌ Image failed to load, removing from localStorage')
+  localStorage.removeItem('soutou_profile_image')
+  profileImage.value = null
 }
 
 // Update Profile

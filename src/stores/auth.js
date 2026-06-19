@@ -87,14 +87,16 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('auth_user')
   }
   
-  function openAuthModal(mode = 'login') {
-    authMode.value = mode
-    showAuthModal.value = true
-  }
-  
-  function closeAuthModal() {
-    showAuthModal.value = false
-  }
+ function openAuthModal(mode = 'login') {
+  authMode.value = mode
+  showAuthModal.value = true
+  console.log('🔓 Opening auth modal, mode:', mode)
+}
+
+function closeAuthModal() {
+  showAuthModal.value = false
+  console.log('🔒 Closing auth modal')
+}
   
   function checkAuth() {
     const savedUser = localStorage.getItem('auth_user')
