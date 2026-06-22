@@ -14,7 +14,7 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, watch } from 'vue'
+import { onMounted, onBeforeUnmount, watch, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Navbar from '@/components/Navbar.vue'
 import Footer from '@/components/Footer.vue'
@@ -29,32 +29,32 @@ const cartStore = useCartStore()
 const route = useRoute()
 const router = useRouter()
 
-// ✅ Store scroll positions in a Map
-const scrollPositions = new Map()
+// Store scroll positions
+const scrollPositions = ref({})
+const isFirstLoad = ref(true)
 
-// ✅ Save current scroll position
+// Save scroll position for current route
 const saveScrollPosition = () => {
   const path = route.fullPath
-  scrollPositions.set(path, window.scrollY)
+  scrollPositions.value[path] = window.scrollY
 }
 
-// ✅ Restore scroll position
+// Restore scroll position for current route
 const restoreScrollPosition = () => {
   const path = route.fullPath
-  const position = scrollPositions.get(path)
-  if (position !== undefined) {
+  const position = scrollPositions.value[path]
+  if (position !== undefined && !isFirstLoad.value) {
     setTimeout(() => {
-      window.scrollTo({
-        top: position,
-        behavior: 'smooth'
-      })
-    }, 100)
+      window.scrollTo({ top: position, behavior: 'smooth' })
+    }, 150)
   }
 }
 
-// ✅ Save on scroll
+// Save on scroll
 const handleScroll = () => {
-  saveScrollPosition()
+  if (!isFirstLoad.value) {
+    saveScrollPosition()
+  }
 }
 
 const handleLoginSuccess = () => {
@@ -64,28 +64,36 @@ const handleLoginSuccess = () => {
   }
 }
 
-// ✅ Watch for route changes
+// Watch for route changes
 watch(() => route.fullPath, (newPath, oldPath) => {
+  // Save old position
   if (oldPath) {
-    // Save old position before leaving
-    scrollPositions.set(oldPath, window.scrollY)
+    scrollPositions.value[oldPath] = window.scrollY
   }
-  // Restore new position after navigation
-  restoreScrollPosition()
+  // Restore new position (if not first load)
+  if (!isFirstLoad.value) {
+    setTimeout(restoreScrollPosition, 100)
+  }
 })
 
-// ✅ Handle browser back/forward
+// Handle browser back/forward
 const handlePopState = () => {
-  restoreScrollPosition()
+  setTimeout(restoreScrollPosition, 100)
 }
 
 onMounted(() => {
   authStore.checkAuth()
+  
+  // ✅ Force scroll to top on first load
+  window.scrollTo(0, 0)
+  
+  // ✅ Mark first load as complete after 500ms
+  setTimeout(() => {
+    isFirstLoad.value = false
+  }, 500)
+  
   window.addEventListener('scroll', handleScroll, { passive: true })
   window.addEventListener('popstate', handlePopState)
-  
-  // Initial restore
-  setTimeout(restoreScrollPosition, 200)
 })
 
 onBeforeUnmount(() => {
